@@ -1,3 +1,11 @@
+## Data credit
+
+Dataset: "Brazilian E-Commerce Public Dataset by Olist" by Olist, published on Kaggle
+(https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce).
+Licensed under CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/).
+The data is not included in this repository. This project is for learning and
+portfolio use only and is not affiliated with Olist.
+
 # Predicting late deliveries in Brazilian e-commerce (Olist)
 
 Can we tell, at the moment a customer places an order, whether it will arrive after the promised date?
