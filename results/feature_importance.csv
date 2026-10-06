@@ -1,0 +1,17 @@
+feature,importance
+promised_days,0.02028
+customer_state,0.0142
+ship_deadline_days,0.00316
+product,0.00226
+n_items,0.00142
+seller_state,0.00088
+same_state,0.00081
+seller_prev_late_rate,0.00041
+distance_km,0.00028
+product_weight_g,0.00022
+product_volume_cm3,-0.00013
+purchase_dow,-0.00018
+price,-0.00021
+freight_value,-0.0004
+orders_last_7d,-0.00072
+seller_prev_orders,-0.00073
