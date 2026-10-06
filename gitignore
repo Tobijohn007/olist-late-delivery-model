@@ -1,0 +1,9 @@
+# Big raw data and the table built from it: anyone can rebuild these
+data/
+deliveries.csv
+
+# Python clutter
+__pycache__/
+*.pyc
+.venv/
+.vscode/
