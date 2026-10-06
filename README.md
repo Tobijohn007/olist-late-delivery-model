@@ -47,7 +47,22 @@ Check the licence and attribution requirements on the Kaggle page before reuse.
 - **Test A**: random 80/20 split (optimistic).
 - **Test B**: train on the past, test on the future (what real use looks like). This is the score to trust.
 
-Exact numbers for both tests are in `results/metrics.csv` after running the model.
+Exact numbers for both tests are in ### Results
+
+| | Test A: random split | Test B: time split (honest) |
+|---|---|---|
+| Orders to train / test | 77,176 / 19,294 | 64,320 / 32,150 |
+| Late share in test set | 6.8% | 4.4% |
+| ROC AUC (0.5 = guessing) | 0.776 | 0.651 |
+| Average precision (guessing = late share) | 0.265 | 0.082 (guessing: 0.044) |
+| Late orders caught in riskiest 10% (guessing: 10%) | 38% | 23.5% |
+| Flagged orders that really are late | 26% | 10.4% |
+
+**Reading the table**
+- Test B is the score to trust: it trains on the past and tests on the future, like real use.
+- Test A looks better because the model has already seen orders from the same weeks it is tested on. Late deliveries come in bursts (Nov 2017, Feb–Mar 2018), and a random split lets the model learn those bursts.
+- On Test B, the model's flagged orders are late about 2.4 times as often as average (10.4% vs 4.4%), but roughly 9 in 10 flagged orders are still on time.
+- The late share is lower in Test B because the test period (after April 2018) had fewer late orders than the spike months in the training period.
 
 ## Findings
 - Strongest signals: **days promised at purchase** and **destination state**. Shorter promises are missed more often.
