@@ -172,3 +172,38 @@ RESULTS.mkdir(exist_ok=True)
 pd.DataFrame(all_metrics).round(4).to_csv(RESULTS / "metrics.csv", index=False)
 ranking.rename("importance").round(5).to_csv(RESULTS / "feature_importance.csv", index_label="feature")
 print(f"\nSaved results to {RESULTS}")
+
+# ---------- 7. Save the model for the web app ----------
+# The app (app.py) loads this one small file. It holds the trained model plus the
+# few lookup tables the app needs, so the big data never has to be uploaded.
+import joblib
+from importlib.metadata import PackageNotFoundError, version
+
+test_scores = model_b.predict_proba(X_test_b)[:, 1]
+final = all_metrics[-1]            # the last run is Test B, the honest one
+bundle = {
+    "model": model_b,
+    "features": list(X.columns),
+    "categories": {c: [str(v) for v in X[c].cat.categories] for c in CATEGORY},
+    "product_by_popularity": [str(v) for v in df["product"].value_counts().index],
+    "medians": {c: float(df[c].median()) for c in NUMBER if df[c].notna().any()},
+    "pair_distance": df.groupby("route")["distance_km"].median().dropna().round(0).to_dict(),
+    "score_percentiles": np.quantile(test_scores, np.linspace(0, 1, 101)).tolist(),
+    "top10_cutoff": float(np.quantile(test_scores, 0.90)),
+    "test_late_rate": float(y_test_b.mean()),
+    "roc_auc": float(final["roc_auc"]),
+    "caught_in_top10pct": float(final["caught_in_top10pct"]),
+    "precision_in_top10pct": float(final["precision_in_top10pct"]),
+}
+joblib.dump(bundle, RESULTS / "model.joblib", compress=3)
+print(f"Saved the model for the web app to {RESULTS / 'model.joblib'}")
+
+# Pin the exact library versions you used, so a hosted copy loads the model safely.
+pins = []
+for pkg in ["pandas", "numpy", "scikit-learn", "joblib", "matplotlib", "streamlit"]:
+    try:
+        pins.append(f"{pkg}=={version(pkg)}")
+    except PackageNotFoundError:
+        pins.append(pkg)
+(BASE / "requirements.txt").write_text("\n".join(pins) + "\n")
+print("Updated requirements.txt with your exact versions")
