@@ -200,7 +200,7 @@ print(f"Saved the model for the web app to {RESULTS / 'model.joblib'}")
 
 # Pin the exact library versions you used, so a hosted copy loads the model safely.
 pins = []
-for pkg in ["pandas", "numpy", "scikit-learn", "joblib", "matplotlib", "streamlit"]:
+for pkg in ["pandas", "numpy", "scikit-learn", "joblib", "matplotlib", "streamlit", "groq"]:
     try:
         pins.append(f"{pkg}=={version(pkg)}")
     except PackageNotFoundError:
