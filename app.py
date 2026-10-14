@@ -8,11 +8,14 @@ Run it:
     python -m streamlit run app.py
 """
 
+import traceback
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+import chat
+import explain
 import predictor
 
 BASE = Path(__file__).resolve().parent
@@ -49,7 +52,9 @@ def state_label(code):
     return f"{code}  -  {predictor.STATES.get(code, code)}"
 
 
-tab_predict, tab_results, tab_about = st.tabs(["Predict an order", "Model results", "About"])
+tab_predict, tab_chat, tab_results, tab_about = st.tabs(
+    ["Predict an order", "Ask the model", "Model results", "About"]
+)
 
 # ---------------------------------------------------------------- Predict
 with tab_predict:
@@ -161,6 +166,89 @@ with tab_predict:
             "order of risk. It is not an exact probability, and most flagged orders still "
             "arrive on time."
         )
+
+        st.subheader("Why this score?")
+        why_rows = explain.drivers(bundle, order, result["score"])
+        st.dataframe(pd.DataFrame([
+            {
+                "Factor": r["factor"],
+                "This order": r["this_order"],
+                "Typical order": r["typical"],
+                "Effect on score (points)": r["effect_points"],
+            }
+            for r in why_rows[:6]
+        ]))
+        st.caption(
+            "Each row changes one thing to a typical value and shows how much the score drops. "
+            "A positive number means that factor pushes this order's risk up."
+        )
+
+# ---------------------------------------------------------------- Ask the model
+MAX_QUESTIONS = 8
+SUGGESTIONS = [
+    "Why did this order get this score?",
+    "What could lower this order's risk?",
+    "How reliable is this model?",
+]
+
+with tab_chat:
+    st.subheader("Ask the model")
+    st.write(
+        "Ask why the order on the Predict tab got its score, or how the model works. "
+        "Answers use only the numbers shown in this app, so the assistant explains and does not guess."
+    )
+    api_key = chat.get_api_key()
+    if "chat_messages" not in st.session_state:
+        st.session_state["chat_messages"] = []
+    if "chat_count" not in st.session_state:
+        st.session_state["chat_count"] = 0
+
+    pending = None
+    suggestion_cols = st.columns(len(SUGGESTIONS))
+    for col, text in zip(suggestion_cols, SUGGESTIONS):
+        if col.button(text):
+            pending = text
+    typed = st.chat_input("Ask about this order or the model")
+    question = typed or pending
+
+    if question:
+        if not api_key:
+            st.info(
+                "The chatbot is switched off because no GROQ_API_KEY is set. "
+                "The 'Why this score?' table on the Predict tab still works without it."
+            )
+        elif st.session_state["chat_count"] >= MAX_QUESTIONS:
+            st.info(f"This demo allows {MAX_QUESTIONS} questions per visit. Refresh the page to start again.")
+        else:
+            context = explain.build_context(bundle, order, result, why_rows)
+            history = list(st.session_state["chat_messages"])
+            try:
+                with st.spinner("Thinking..."):
+                    answer = chat.ask(question, history, context, api_key)
+                st.session_state["chat_messages"].append({"role": "user", "content": question})
+                st.session_state["chat_messages"].append({"role": "assistant", "content": answer})
+                st.session_state["chat_count"] += 1
+            except ImportError:
+                traceback.print_exc()
+                st.warning(
+                    "The chat library is not installed. Add `groq` to requirements.txt and redeploy."
+                )
+            except Exception:
+                # The full error goes to the terminal (or the Render logs) so it can be fixed.
+                traceback.print_exc()
+                st.warning(
+                    "The chatbot could not answer right now (a wrong or expired key, too many "
+                    "requests, or a connection problem). Check the logs, or try again in a minute. "
+                    "The 'Why this score?' table still works."
+                )
+
+    for message in st.session_state["chat_messages"]:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+    st.caption(
+        "AI explanations can still make mistakes. The facts they rely on are in the "
+        "Predict and Model results tabs."
+    )
 
 # ---------------------------------------------------------------- Results
 with tab_results:
