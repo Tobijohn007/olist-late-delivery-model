@@ -198,6 +198,20 @@ bundle = {
 joblib.dump(bundle, RESULTS / "model.joblib", compress=3)
 print(f"Saved the model for the web app to {RESULTS / 'model.joblib'}")
 
+# A small sample of real TEST-period orders for the app's "Spot the late order" game.
+test_orders = df[~past]
+sample = pd.concat([
+    test_orders[test_orders["is_late"] == 1].sample(80, random_state=1),
+    test_orders[test_orders["is_late"] == 0].sample(320, random_state=1),
+])
+game_columns = [
+    "customer_state", "seller_state", "product", "price", "freight_value", "n_items",
+    "product_weight_g", "product_volume_cm3", "promised_days", "ship_deadline_days",
+    "purchase_dow", "orders_last_7d", "seller_prev_orders", "seller_prev_late_rate", "is_late",
+]
+sample[game_columns].round(2).to_csv(RESULTS / "challenge_orders.csv", index=False)
+print(f"Saved the game sample to {RESULTS / 'challenge_orders.csv'}")
+
 # Pin the exact library versions you used, so a hosted copy loads the model safely.
 pins = []
 for pkg in ["pandas", "numpy", "scikit-learn", "joblib", "matplotlib", "streamlit", "groq"]:
