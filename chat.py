@@ -50,4 +50,7 @@ def ask(question, history, context, api_key, model=None):
         max_tokens=MAX_ANSWER_TOKENS,
         temperature=0.2,
     )
-    return reply.choices[0].message.content.strip()
+        answer = (reply.choices[0].message.content or "").strip()
+    if not answer:
+        raise RuntimeError("The model returned an empty answer.")
+    return answer 
